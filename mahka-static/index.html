@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مَحكى</title>
+<meta name="description" content="">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/site.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="index.html">
+      <img data-site-logo hidden class="brand-logo" alt="">
+      <span class="brand-name" data-site-name></span>
+    </a>
+    <nav class="main-nav" id="mainNav">
+      <a href="index.html">الرئيسية</a>
+      <a href="stories.html">الحكايات</a>
+    </nav>
+    <button class="nav-toggle" id="navToggle" aria-label="القائمة"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="hero-glow"></div>
+    <div class="container hero-inner">
+      <p class="hero-eyebrow" data-site-name></p>
+      <h1 data-site-tagline></h1>
+      <p class="hero-sub" data-site-description></p>
+      <a class="btn-primary" href="stories.html" data-hero-cta></a>
+    </div>
+  </section>
+
+  <section class="section" id="featuredSection" hidden>
+    <div class="container">
+      <h2 class="section-title">اختر حكايتك</h2>
+      <div class="featured-row" id="featuredRow"></div>
+    </div>
+  </section>
+
+  <section class="section section-alt">
+    <div class="container">
+      <div class="section-head">
+        <h2 class="section-title">أحدث الحكايات</h2>
+        <a class="link-more" href="stories.html?sort=recent">عرض الكل ←</a>
+      </div>
+      <div class="story-grid" id="recentGrid"><p class="empty-state">جارٍ التحميل…</p></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <h2 class="section-title">الأكثر استماعًا</h2>
+        <a class="link-more" href="stories.html?sort=most_listened">عرض الكل ←</a>
+      </div>
+      <div class="story-grid" id="mostListenedGrid"></div>
+    </div>
+  </section>
+
+  <section class="section section-alt" id="categoriesSection" hidden>
+    <div class="container">
+      <h2 class="section-title">التصنيفات</h2>
+      <div class="category-pills" id="categoryPills"></div>
+    </div>
+  </section>
+
+  <section class="section about-section">
+    <div class="container about-inner">
+      <h2 class="section-title">عن <span data-site-name></span></h2>
+      <p data-about-text></p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-brand">
+      <span class="brand-name" data-site-name></span>
+      <p data-site-tagline></p>
+    </div>
+    <div class="footer-links">
+      <a href="index.html">الرئيسية</a>
+      <a href="stories.html">الحكايات</a>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <p>© <span data-current-year></span> <span data-site-name></span> — <span data-footer-text></span></p>
+  </div>
+</footer>
+
+<div class="sticky-player" id="stickyPlayer" hidden>
+  <div class="container player-inner">
+    <img id="playerCover" src="" alt="">
+    <div class="player-meta"><strong id="playerTitle"></strong><span id="playerNarrator"></span></div>
+    <div class="player-controls">
+      <button id="playerBack10">⏪</button>
+      <button id="playerToggle">▶</button>
+      <button id="playerFwd10">⏩</button>
+    </div>
+    <div class="player-progress">
+      <span id="playerCurrent">٠:٠٠</span>
+      <input type="range" id="playerSeek" value="0" min="0" max="100" step="0.1">
+      <span id="playerDuration">٠:٠٠</span>
+    </div>
+    <select id="playerSpeed">
+      <option value="0.75">×0.75</option><option value="1" selected>×1</option>
+      <option value="1.25">×1.25</option><option value="1.5">×1.5</option><option value="2">×2</option>
+    </select>
+    <audio id="audioEl" preload="none"></audio>
+  </div>
+</div>
+
+<script src="assets/js/site.js"></script>
+<script src="assets/js/player.js"></script>
+<script>
+document.getElementById('navToggle').addEventListener('click', () => {
+  document.getElementById('mainNav').classList.toggle('open');
+});
+
+(async function () {
+  const [stories, categories, settings] = await Promise.all([
+    Mahka.getStories(), Mahka.getCategories(), Mahka.getSettings(),
+  ]);
+  Mahka.applySettingsToDom(settings);
+  const catMap = Mahka.categoriesById(categories);
+
+  const published = stories.filter(s => s.status === 'published');
+  const recent = [...published].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 8);
+  const mostListened = [...published].sort((a, b) => (b.listens_count||0) - (a.listens_count||0)).slice(0, 8);
+  const featured = published.filter(s => s.is_featured).slice(0, 6);
+
+  document.getElementById('recentGrid').innerHTML = recent.length
+    ? recent.map(s => Mahka.storyCardHTML(s, catMap)).join('')
+    : '<p class="empty-state">لا توجد حكايات منشورة بعد.</p>';
+
+  document.getElementById('mostListenedGrid').innerHTML = mostListened.length
+    ? mostListened.map(s => Mahka.storyCardHTML(s, catMap)).join('')
+    : '<p class="empty-state">لا توجد بيانات استماع كافية بعد.</p>';
+
+  if (featured.length) {
+    document.getElementById('featuredSection').hidden = false;
+    document.getElementById('featuredRow').innerHTML = featured.map(s => Mahka.storyCardHTML(s, catMap)).join('');
+  }
+
+  if (categories.length) {
+    document.getElementById('categoriesSection').hidden = false;
+    document.getElementById('categoryPills').innerHTML = categories.map(c =>
+      `<a href="stories.html?category=${encodeURIComponent(c.slug)}" class="pill">${Mahka.escapeHtml(c.name)}</a>`
+    ).join('');
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title id="pageTitle">مَحكى</title>
+<link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/site.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="../index.html">
+      <img data-site-logo hidden class="brand-logo" alt="">
+      <span class="brand-name" data-site-name></span>
+    </a>
+    <nav class="main-nav" id="mainNav">
+      <a href="../index.html">الرئيسية</a>
+      <a href="../stories.html">الحكايات</a>
+    </nav>
+    <button class="nav-toggle" id="navToggle" aria-label="القائمة"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<main id="storyRoot">
+  <p style="text-align:center; padding:80px 0; color:#cfc4ac;">جارٍ التحميل…</p>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-brand"><span class="brand-name" data-site-name></span><p data-site-tagline></p></div>
+    <div class="footer-links"><a href="../index.html">الرئيسية</a><a href="../stories.html">الحكايات</a></div>
+  </div>
+  <div class="container footer-bottom"><p>© <span data-current-year></span> <span data-site-name></span> — <span data-footer-text></span></p></div>
+</footer>
+
+<div class="sticky-player" id="stickyPlayer" hidden>
+  <div class="container player-inner">
+    <img id="playerCover" src="" alt="">
+    <div class="player-meta"><strong id="playerTitle"></strong><span id="playerNarrator"></span></div>
+    <div class="player-controls"><button id="playerBack10">⏪</button><button id="playerToggle">▶</button><button id="playerFwd10">⏩</button></div>
+    <div class="player-progress"><span id="playerCurrent">٠:٠٠</span><input type="range" id="playerSeek" value="0" min="0" max="100" step="0.1"><span id="playerDuration">٠:٠٠</span></div>
+    <select id="playerSpeed"><option value="0.75">×0.75</option><option value="1" selected>×1</option><option value="1.25">×1.25</option><option value="1.5">×1.5</option><option value="2">×2</option></select>
+    <audio id="audioEl" preload="none"></audio>
+  </div>
+</div>
+
+<script>window.MAHKA_ROOT = "../";</script>
+<script src="../assets/js/site.js"></script>
+<script src="../assets/js/player.js"></script>
+<script>
+document.getElementById('navToggle').addEventListener('click', () => document.getElementById('mainNav').classList.toggle('open'));
+
+(async function () {
+  const slug = new URLSearchParams(location.search).get('slug');
+  const [stories, categories, settings] = await Promise.all([Mahka.getStories(), Mahka.getCategories(), Mahka.getSettings()]);
+  Mahka.applySettingsToDom(settings);
+  const catMap = Mahka.categoriesById(categories);
+
+  const story = stories.find(s => s.slug === slug && s.status === 'published');
+  const root = document.getElementById('storyRoot');
+
+  if (!story) {
+    root.innerHTML = `
+      <section class="section" style="text-align:center; padding: 6rem 1rem;">
+        <h1 style="font-family:'Aref Ruqaa',serif; font-size:3rem; color:var(--gold);">٤٠٤</h1>
+        <p>هذه الحكاية غير موجودة، أو انتقلت إلى مكان آخر.</p>
+        <a class="btn-primary" href="../index.html">العودة إلى الرئيسية</a>
+      </section>`;
+    return;
+  }
+
+  document.getElementById('pageTitle').textContent = `${story.title} — ${settings.site_name}`;
+  const cat = catMap[story.category_id];
+  const minutes = story.duration_seconds ? Math.floor(story.duration_seconds/60) : null;
+
+  const published = stories.filter(s => s.status === 'published' && s.id !== story.id);
+  const related = published.filter(s => s.category_id === story.category_id)
+    .sort((a,b) => (b.listens_count||0)-(a.listens_count||0)).slice(0,4);
+
+  let next = published.filter(s => s.category_id === story.category_id)
+    .sort((a,b) => new Date(a.created_at)-new Date(b.created_at))[0];
+  if (!next) next = [...published].sort((a,b) => new Date(b.created_at)-new Date(a.created_at))[0];
+
+  root.innerHTML = `
+    <section class="story-detail">
+      <div class="container story-detail-grid">
+        <div class="story-cover-large">
+          ${story.cover_path
+            ? `<img src="${Mahka.uploadUrl(story.cover_path)}" alt="${Mahka.escapeHtml(story.title)}">`
+            : `<div class="cover-placeholder large">${Mahka.escapeHtml(story.title[0]||'؟')}</div>`}
+        </div>
+        <div class="story-info">
+          ${cat ? `<a class="story-chip" href="../stories.html?category=${encodeURIComponent(cat.slug)}">${Mahka.escapeHtml(cat.name)}</a>` : ''}
+          <h1>${Mahka.escapeHtml(story.title)}</h1>
+          <div class="story-meta-row">
+            ${story.narrator ? `<span>بصوت: ${Mahka.escapeHtml(story.narrator)}</span>` : ''}
+            ${minutes ? `<span>${minutes} دقيقة</span>` : ''}
+            <span>${story.listens_count||0} استماع</span>
+          </div>
+          <p class="story-description">${Mahka.escapeHtml(story.description)}</p>
+          <button class="btn-primary play-main" id="mainPlayBtn">▶ استمع الآن</button>
+          ${next ? `<a class="link-more next-link" href="index.html?slug=${encodeURIComponent(next.slug)}">القصة التالية: ${Mahka.escapeHtml(next.title)} ←</a>` : ''}
+        </div>
+      </div>
+    </section>
+    ${related.length ? `
+    <section class="section section-alt">
+      <div class="container">
+        <h2 class="section-title">قصص قد تعجبك</h2>
+        <div class="story-grid">${related.map(s => Mahka.storyCardHTML(s, catMap)).join('')}</div>
+      </div>
+    </section>` : ''}
+  `;
+
+  document.getElementById('mainPlayBtn').addEventListener('click', () => {
+    document.dispatchEvent(new Event('mahka:noop')); // placeholder, real trigger below
+    const el = document.createElement('span');
+    el.dataset.playStory = '';
+    el.dataset.title = story.title;
+    el.dataset.narrator = story.narrator || '';
+    el.dataset.cover = story.cover_path ? Mahka.uploadUrl(story.cover_path) : '';
+    el.dataset.audio = story.audio_path ? Mahka.uploadUrl(story.audio_path) : '';
+    if (next) {
+      el.dataset.nextAudio = next.audio_path ? Mahka.uploadUrl(next.audio_path) : '';
+      el.dataset.nextSlug = `index.html?slug=${encodeURIComponent(next.slug)}`;
+      el.dataset.nextTitle = next.title;
+      el.dataset.nextCover = next.cover_path ? Mahka.uploadUrl(next.cover_path) : '';
+      el.dataset.nextNarrator = next.narrator || '';
+    }
+    document.body.appendChild(el);
+    el.click();
+    el.remove();
+  });
+
+  // تسجيل استماع محلي (يُخزَّن بمتصفح الزائر فقط في الموقع الثابت، لا يوجد سيرفر مركزي)
+  let tracked = false;
+  document.getElementById('audioEl').addEventListener('timeupdate', function handler() {
+    if (!tracked && this.currentTime > 5) {
+      tracked = true;
+      // ملاحظة: العداد التراكمي المشترك بين كل الزوار يحتاج تحديثه من لوحة التحكم يدويًا
+      // أو ربط لاحق بخدمة تحليلات خارجية (راجع ملاحظات الإحصائيات في README).
+    }
+  });
+})();
+</script>
+</body>
+</html>
