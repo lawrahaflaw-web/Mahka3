@@ -1,1 +1,19 @@
-[]
+[
+  {"slug":"khayal","name":"📖 خيال"},
+  {"slug":"fantasia","name":"🪄 فانتازيا"},
+  {"slug":"ghumud","name":"🕵🏻 غموض"},
+  {"slug":"tahqiq","name":"🔎 تحقيق"},
+  {"slug":"rueb","name":"👻 رعب"},
+  {"slug":"romance","name":"❤️ رومانسية"},
+  {"slug":"drama","name":"💔 دراما"},
+  {"slug":"waqiya","name":"🌿 واقعية"},
+  {"slug":"mughamarat","name":"🗺️ مغامرات"},
+  {"slug":"nafsi","name":"🧠 نفسي"},
+  {"slug":"tarikhi","name":"🏺 تاريخي"},
+  {"slug":"scifi","name":"🚀 خيال علمي"},
+  {"slug":"asatir","name":"🧚 حكايات وأساطير"},
+  {"slug":"atfal","name":"👧 قصص أطفال"},
+  {"slug":"qabl-alnawm","name":"🌙 حكايات ما قبل النوم"},
+  {"slug":"mulhima","name":"✨ قصص ملهمة"},
+  {"slug":"comedy","name":"😂 كوميديا"}
+]
